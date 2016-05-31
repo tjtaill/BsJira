@@ -115,19 +115,20 @@ class BsIssues(object):
         
     def _add_users_to(self, jql, jira_user_ids):
         jql.and_('')
+        jql.openParen('')
         last = len(jira_user_ids) - 1
         for i, jira_user_id in enumerate(jira_user_ids):
             jql.assignee_is(jira_user_id)
             if i < last:
                 """ python keyword or so use OR jql won't care """
                 jql.or_('')
-    
+        jql.closeParen('')
     def open_assigned_to(self, jira_user_ids):
         """
         returns a set of issues that a list of jira user have yet to start
         """
         jql = JqlIssueQuery()
-        jql.status_isnot('Closed')
+        jql.status_isnot('closed')
         self._add_users_to(jql, jira_user_ids)
         return self.query(jql.build())     
         
@@ -326,13 +327,24 @@ class BsIssues(object):
             if i < last:
                 jql.or_('')
         return self.query(jql.build())
+
+    def _jiras_from_links(self, issue):
+        links = getattr(issue, 'issuelinks')
+        jiras = set()
+        for link in links:
+            if not hasattr(link, 'outwardIssue'):
+                continue
+            jiras.add(str(link.outwardIssue))
+        return jiras
     
-    """
-    TODO: figure out how you want to present these, unfortunately
-    you need a jira connection to retrieve worklogs and comments
-    for worklogks we are interested in woklog.raw['comment'], and
-    for comments we want comments.body
-    """
+    def linked_to(self, assignees, links):
+        unfiltered_issues = self.open_assigned_to(assignees)
+        filtered_issues = []
+        for issue in unfiltered_issues:
+            jiras = self._jiras_from_links(issue)
+            if jiras & links:
+                filtered_issues.append(issue)
+        return filtered_issues
 
 
 if __name__ == '__main__':
@@ -343,7 +355,7 @@ if __name__ == '__main__':
     bsIssues = BsIssues('ttaillefer', passwd)
 
     me = ['ttaillefer']
-    team = ['nicolas', 'ttaillefer', 'mreiher-chancy', 'mpiotte', 'scossette', 'ist-andre', 'oforrest', 'ablais']
+    team = ['nicolas', 'ttaillefer', 'mreiher-chancy', 'mpiotte', 'scossette', 'ist-andre', 'oforrest', 'ablais', 'ejulien']
 
     """
     members = ['ttaillefer', 'mreiher-chancy']
@@ -369,8 +381,9 @@ if __name__ == '__main__':
             issue_tabulator = IssueTabulator(bsIssues.jira)
             f.write(issue_tabulator.tabulate(issues, ['id', 'summary', 'status']))
     """
-    issues = bsIssues.progressed_last_week(me)
+    # issues = bsIssues.progressed_last_week(me)
+    issues = bsIssues.linked_to(['ttaillefer', 'ejulien', 'scossette'], {'BW-8290'})
     issue_tabulator = IssueTabulator(bsIssues.jira)
-    print(issue_tabulator.tabulate(issues, ['id', 'summary', 'status']))
+    print(issue_tabulator.tabulate(issues, ['id', 'summary', 'status', 'assignee', 'issuelinks']))
 
 

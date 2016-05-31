@@ -12,7 +12,6 @@ import datetime
 class IssueTabulator(object):
     def _format(self, issue, field):
         attr = getattr(issue, field)
-        # TODO : investigate unicode issues for python 3.0
         unwrapped = str(attr) 
         # self._strip_unicode(attr) if type(attr) is unicode else str(attr)
         wrapped = wrap( unwrapped, self._max_field_length, replace_whitespace=False)
@@ -58,6 +57,25 @@ class IssueTabulator(object):
         unwrapped = ''.join(acc)
         wrapped = wrap(unwrapped, self._max_field_length)
         return wrapped
+
+    def _jira_from_link(self, link):
+        if hasattr(link, 'outwardIssue'):
+            return str(link.outwardIssue)
+        elif hasattr(link, 'inwardIssue'):
+            return str(link.inwardIssue)
+        else:
+            return ''
+
+
+    def _issuelinks(self, issue, field):
+        issuelinks = getattr(issue, field)
+        acc = []
+        for issuelink in issuelinks:
+            acc.append(self._jira_from_link(issuelink))
+        unwrapped = ','.join(acc)
+        wrapped = wrap(unwrapped, self._max_field_length)
+        return wrapped
+
     
     def _build_formatters(self):
         formatters = defaultdict(lambda: self._format)
@@ -72,6 +90,7 @@ class IssueTabulator(object):
         formatters['timeoriginalestimate'] = self._time
         formatters['worklog'] = self._worklogs
         formatters['comments'] = self._comments
+        formatters['issuelinks'] = self._issuelinks
         return formatters
     
     def _build_multiline(self):
