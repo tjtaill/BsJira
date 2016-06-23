@@ -3,6 +3,7 @@ This module is used to format jira issues
 specifically 
 from bs_jira import Issue
 """
+
 from tabulate import tabulate
 from collections import defaultdict
 from textwrap import wrap

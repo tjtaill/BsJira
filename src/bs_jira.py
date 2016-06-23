@@ -382,8 +382,9 @@ if __name__ == '__main__':
             f.write(issue_tabulator.tabulate(issues, ['id', 'summary', 'status']))
     """
     # issues = bsIssues.progressed_last_week(me)
-    issues = bsIssues.linked_to(['ttaillefer', 'ejulien', 'scossette'], {'BW-8290'})
+    # issues = bsIssues.linked_to(['ttaillefer', 'ejulien', 'scossette'], {'BW-8290'})
+    issues = bsIssues.progressed_last_year(['ttaillefer'])
     issue_tabulator = IssueTabulator(bsIssues.jira)
-    print(issue_tabulator.tabulate(issues, ['id', 'summary', 'status', 'assignee', 'issuelinks']))
+    print(issue_tabulator.tabulate(issues, ['id', 'summary', 'status']))
 
 
